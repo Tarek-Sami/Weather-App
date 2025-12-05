@@ -1,3 +1,7 @@
+body {
+  background-color: #0052d0 !important;
+}
+
 .App {
   text-align: center;
 }
@@ -35,4 +39,22 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* custom fonts */
+
+@font-face {
+  font-family: 'tajawal';
+  src: url('../public/fonts/tajawal/Tajawal-Regular.ttf');
+  weight: 500;
+}
+@font-face {
+  font-family: 'tajawal';
+  src: url('../public/fonts/tajawal/Tajawal-Light.ttf');
+  weight: 400;
+}
+@font-face {
+  font-family: 'tajawal';
+  src: url('../public/fonts/tajawal/Tajawal-Medium.ttf');
+  weight: 600;
 }
