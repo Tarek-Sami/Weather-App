@@ -86,7 +86,7 @@ function App() {
     }
     axios
       .get(
-        `http://api.openweathermap.org/geo/1.0/direct?q=${search}&limit=10&appid=${process.env.REACT_APP_WEATHER_API_KEY}`,
+        `https://api.openweathermap.org/geo/1.0/direct?q=${search}&limit=10&appid=${process.env.REACT_APP_WEATHER_API_KEY}`,
         {
           cancelToken: new axios.CancelToken((c) => {
             cancelAxios = c;
@@ -344,7 +344,7 @@ function App() {
                   {/* Temp Image */}
                   {loading ? null : (
                     <img
-                      src={`http://openweathermap.org/img/wn/${temp.icon}@2x.png`}
+                      src={`https://openweathermap.org/img/wn/${temp.icon}@2x.png`}
                       alt="Current weather icon"
                     />
                   )}
