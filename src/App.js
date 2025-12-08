@@ -1,6 +1,6 @@
 import './App.css';
 // React import
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 // materual-ui components import
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
@@ -12,6 +12,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 // Material-ui icons import
 import CloudIcon from '@mui/icons-material/Cloud';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 // External libraries import
 import axios from 'axios';
 import moment from 'moment/moment';
@@ -32,6 +34,12 @@ function App() {
   const [locale, setLocale] = useState('ar');
   const [dateAndTime, setDateAndTime] = useState('');
   const [direction, setDirection] = useState('rtl');
+  const [cities, setCities] = useState([]);
+  const [search, setSearch] = useState('');
+  const [lat, setLat] = useState(30.033333);
+  const [lon, setLon] = useState(31.233334);
+  const [city, setCity] = useState('القاهرة');
+  const [selectedCity, setSelectedCity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [temp, setTemp] = useState({
     currentTemp: null,
@@ -48,21 +56,65 @@ function App() {
       moment.locale('en');
       setDateAndTime(moment().format('dddd') + ' ' + moment().format('LL'));
       setDirection('ltr');
+      setCity(selectedCity ? selectedCity.name : city);
     } else {
       setLocale('ar');
       i18n.changeLanguage('ar');
       moment.locale('ar');
       setDateAndTime(moment().format('dddd') + ' ' + moment().format('LL'));
       setDirection('rtl');
+      setCity(
+        selectedCity ? selectedCity.local_names?.ar || selectedCity.name : city
+      );
     }
   }
+
+  useEffect(() => {
+    if (selectedCity) {
+      localStorage.setItem('city', JSON.stringify(selectedCity));
+    }
+  }, [selectedCity]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('city');
+    if (saved) setSelectedCity(JSON.parse(saved));
+  }, []);
+  useEffect(() => {
+    if (!search || search.trim() === '') {
+      setCities([]);
+      return;
+    }
+    axios
+      .get(
+        `http://api.openweathermap.org/geo/1.0/direct?q=${search}&limit=10&appid=${process.env.REACT_APP_WEATHER_API_KEY}`,
+        {
+          cancelToken: new axios.CancelToken((c) => {
+            cancelAxios = c;
+          }),
+        }
+      )
+      .then((response) => {
+        setCities(response.data);
+      })
+      .catch(function (error) {
+        // handle error
+        if (error.code === 'ERR_CANCELED') return;
+        console.error(error);
+
+        return () => {
+          if (cancelAxios) {
+            cancelAxios();
+          }
+        };
+      });
+  }, [search]);
 
   useEffect(() => {
     i18n.changeLanguage(locale);
     setDateAndTime(moment().format('dddd') + ' ' + moment().format('LL'));
     axios
       .get(
-        'https://api.openweathermap.org/data/2.5/weather?lat=30.033333&lon=31.233334&appid=aa65649043192dd14501457214192f84',
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.REACT_APP_WEATHER_API_KEY}`,
 
         {
           cancelToken: new axios.CancelToken((c) => {
@@ -72,7 +124,6 @@ function App() {
       )
       .then(function (response) {
         // handle success
-        console.log(response);
         const responseTemp = Math.round(response.data.main.temp - 273.15);
         const responseDiscrertion = response.data.weather[0].description;
         const responseMin = Math.round(response.data.main.temp_min - 273.15);
@@ -96,10 +147,23 @@ function App() {
       });
 
     return () => {
-      cancelAxios();
+      if (cancelAxios) {
+        cancelAxios();
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [lat, lon]);
+
+  const uniqueCities = useMemo(() => {
+    const seen = new Set();
+
+    return cities.filter((city) => {
+      const key = `${city.name},${city.state || ''},${city.country}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [cities]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -115,6 +179,90 @@ function App() {
           gap: '30px',
         }}
       >
+        <Autocomplete
+          disablePortal
+          options={uniqueCities}
+          getOptionLabel={(option) =>
+            `${option.name}, ${option.state ? option.state + ', ' : ''}${
+              option.country
+            }`
+          }
+          isOptionEqualToValue={(option, value) =>
+            option.lat === value.lat && option.lon === value.lon
+          }
+          inputValue={search}
+          onInputChange={(event, newValue) => {
+            setSearch(newValue);
+          }}
+          clearOnBlur={false}
+          sx={{
+            width: 320,
+            mb: '16px',
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: 'white',
+              borderRadius: '10px',
+              '& fieldset': {
+                borderColor: 'rgba(255,255,255,0.3)',
+              },
+              '&:hover fieldset': {
+                borderColor: 'rgba(28,52,91,0.55)',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'rgb(28,52,91)',
+                borderWidth: '2px',
+              },
+            },
+            '& .MuiInputBase-input': {
+              padding: '10px 12px',
+            },
+            '& .MuiInputLabel-root': {
+              color: 'rgba(0,0,0,0.6)',
+              fontWeight: 500,
+            },
+            '& .MuiInputLabel-root.Mui-focused': {
+              color: 'rgb(28,52,91)',
+            },
+            '& .MuiSvgIcon-root': {
+              color: 'rgb(28,52,91)',
+            },
+          }}
+          componentsProps={{
+            paper: {
+              sx: {
+                mt: 1,
+                borderRadius: '10px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                overflow: 'hidden',
+              },
+            },
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={locale === 'ar' ? 'اختَر مدينة' : 'Select City'}
+              placeholder={
+                locale === 'ar' ? 'ابحث عن مدينة...' : 'Search a city...'
+              }
+              variant="outlined"
+              size="small"
+            />
+          )}
+          onChange={(e, value) => {
+            if (value) {
+              setSelectedCity(value);
+              console.log('Selected City:', value);
+              console.log('Lat:', value.lat, 'Lon:', value.lon);
+              setLat(value.lat);
+              setLon(value.lon);
+              if (locale === 'ar') {
+                setCity(value.local_names?.ar || value.name);
+              } else {
+                setCity(value.name);
+              }
+              setLoading(true);
+            }
+          }}
+        />
         <Card
           maxWidth="sm"
           dir={direction}
@@ -143,7 +291,11 @@ function App() {
                   fontWeight: '600',
                 }}
               >
-                {t('Cairo')}
+                {locale === 'ar' && city === 'Cairo'
+                  ? 'القاهرة'
+                  : city === 'القاهرة' && locale === 'en'
+                  ? 'Cairo'
+                  : city}
               </Typography>
               <Typography variant="h5" style={{ marginRight: '20px' }}>
                 {dateAndTime}
