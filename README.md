@@ -1,54 +1,90 @@
 # Weather App
 
-A simple bilingual weather card for Cairo built with React and Material UI. It fetches current conditions from OpenWeatherMap and supports live Arabic/English toggling.
+A bilingual weather card built with React and Material UI. It shows current conditions from OpenWeatherMap, lets you search for cities worldwide, and toggles between Arabic and English with RTL/LTR layout.
 
-- Live demo: [weatherappbytarek.netlify.app](https://weatherappbytarek.netlify.app/)  
-- Current location: Cairo, Egypt (static lat/lon in code)
+**Live demo:** [weatherappbytarek.netlify.app](https://weatherappbytarek.netlify.app/)
 
 ## Features
-- Current temperature with icon, min/max, and condition text.
-- Arabic/English toggle powered by `react-i18next` with RTL/LTR layout switch.
-- Moment.js date display localized with the selected language.
-- Material UI styling with the Tajawal font loaded from `public/fonts`.
-- Loading spinner while the API request completes.
+
+- Current temperature, weather icon, min/max, and condition text
+- City search with MUI Autocomplete (OpenWeatherMap Geocoding API)
+- Selected city saved in `localStorage` across visits
+- Arabic/English toggle via `react-i18next` with RTL/LTR direction switch
+- Localized date display with Moment.js
+- Loading spinner while weather data is fetched
+- Tajawal font and custom MUI theme
 
 ## Tech stack
+
 - React (CRA), Material UI, Axios
-- i18next + i18next-browser-languagedetector + i18next-http-backend
-- Moment.js for localized date formatting
+- Redux Toolkit (`weatherApiSlice`) for async API state
+- React Context for search query and latitude/longitude
+- i18next + `react-i18next` for translations
+- Moment.js for localized dates
 
 ## Getting started
-1) Install dependencies  
+
+1. Install dependencies:
+
 ```bash
 npm install
 ```
 
-2) Start the dev server  
+2. Add your OpenWeatherMap API key. Create a `.env` file in the project root:
+
+```env
+REACT_APP_WEATHER_API_KEY=your_api_key_here
+```
+
+Get a free key at [openweathermap.org/api](https://openweathermap.org/api).
+
+3. Start the dev server:
+
 ```bash
 npm start
 ```
-App runs at http://localhost:3000.
 
-3) Run tests  
-```bash
-npm test
-```
+App runs at [http://localhost:3000](http://localhost:3000).
 
-4) Build for production  
+4. Other scripts:
+
 ```bash
-npm run build
+npm test          # Run tests
+npm run build     # Production build
 ```
 
 ## API usage
-- Data source: OpenWeatherMap current weather endpoint.
-- The sample key is hard-coded in `src/App.js`. For your own deployments, create a `.env` file and store a key as `REACT_APP_OPENWEATHER_API_KEY`, then update the request URL to read from `process.env.REACT_APP_OPENWEATHER_API_KEY`.
-- Latitude/longitude are set to Cairo (30.033333, 31.233334); change them in `src/App.js` to target a different city.
+
+- **Current weather:** `GET /data/2.5/weather` — called with `lat` and `lon` from `src/weatherApiSlice.js`
+- **City search:** `GET /geo/1.0/direct` — used when typing in the Autocomplete field
+- Default coordinates are Cairo, Egypt (`30.033333`, `31.233334`) in `src/latAndLoncontext.js`; picking a city updates them via context
+
+Never commit your `.env` file or expose API keys in client-side code beyond what CRA injects at build time.
 
 ## Localization
-- Arabic translations live in `public/locales/ar/translation.json`.
-- i18next configuration is in `src/i18n.js`. The language toggle in `App.js` flips both the locale and text direction.
 
-## Folder notes
-- `src/App.js`: main UI, API call, language toggle.
-- `src/App.css`: theme background and Tajawal font-face declarations.
-- `public/fonts/tajawal`: bundled Arabic-friendly font used by MUI theme.
+- Arabic: `public/locales/ar/translation.json`
+- English: `public/locales/en/translation.json`
+- Config: `src/i18n.js` — language toggle in `App.js` updates locale, Moment.js, and text direction
+
+## Project structure
+
+```
+weather-app/
+├── public/
+│   ├── fonts/tajawal/       # Arabic-friendly font
+│   └── locales/             # i18n JSON files
+├── src/
+│   ├── App.js               # Main UI, Autocomplete, language toggle
+│   ├── App.css              # Theme background and font-face
+│   ├── weatherApiSlice.js   # Redux async thunks (weather + cities)
+│   ├── store.js             # Redux store
+│   ├── searchContext.js     # City search input state
+│   ├── latAndLoncontext.js  # Selected coordinates (default: Cairo)
+│   └── i18n.js              # i18next setup
+└── package.json
+```
+
+## Author
+
+Part of the **React Front-End Course** project collection.
